@@ -4,13 +4,22 @@
 <head>
 <meta charset="UTF-8">
 <title>Open Chat</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="<%= request.getContextPath() %>/css/style.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
-	<h1>Open Chat!</h1>
-	<ul id="list"></ul>
-	<div>
-		<input id="message" type="text">
-		<input id="send" type="button" value="投稿" />
+	<div class="wrap">
+		<h1 class="logo">Open Chat!</h1>
+		<ul id="messages"></ul>
+		<div class="footer">
+			<div class="footer-inner">
+				<form id="form" method="post">
+					<input id="message" class="col-9" type="text">
+					<input id="send" class="btn btn-primary" type="submit" value="POST" />
+				</form>
+			</div>
+		</div>
 	</div>
 	
 	<div id="webSocketEndpoint" style="display: none;">
@@ -28,7 +37,7 @@
 			webSocket.onmessage = (event) => {
 				const messageElement = document.createElement('li');
 				messageElement.innerText = event.data;
-				document.getElementById('list').appendChild(messageElement);
+				document.getElementById('messages').appendChild(messageElement);
 			}
 		};
 
@@ -38,7 +47,8 @@
 		};
 
 		//投稿ボタン押下時サーバーにメッセージを送信
-		document.getElementById('send').addEventListener('click', function() {
+		document.getElementById('form').addEventListener('submit', (event) => {
+			event.preventDefault();
 			const messageInput = document.getElementById('message');
 			webSocket.send(messageInput.value);
 			messageInput.value = '';
