@@ -1,6 +1,8 @@
 package service;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -12,6 +14,9 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import domain.OpenChatMessage;
 import domain.OpenChatUser;
 
 /**
@@ -19,6 +24,12 @@ import domain.OpenChatUser;
  */
 @ServerEndpoint("/service/openchat")
 public class OpenChatEndPoint {
+	
+	// JSON対応
+	ObjectMapper jsonMapper = new ObjectMapper();
+	
+	// 日付用
+	SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd HH:mm:ss");
 
 	// 接続中のユーザーリスト
 	public static Set<OpenChatUser> users = new HashSet<>();
@@ -26,11 +37,14 @@ public class OpenChatEndPoint {
 	// クライアントとの接続開始時
 	@OnOpen
 	public void handleOpen(Session userSession) throws IOException {
-		System.out.println("joined: " + userSession);
+		// ユーザーの追加
 		users.add(new OpenChatUser(userSession));
-		for (OpenChatUser user : users) {
-			user.getSession().getBasicRemote().sendText("Welcome! Current Users: " + users.size());
-		}
+		
+		// メッセージの作成
+		OpenChatMessage message = new OpenChatMessage("welcome", "system", String.valueOf(users.size()), sdf.format(new Date()));
+		
+		// 全ユーザーにメッセージを送信
+		sendMessageToAll(message);
 	}
 
 	// ブラウザからメッセージを受信した際の処理
@@ -63,6 +77,14 @@ public class OpenChatEndPoint {
 	private OpenChatUser findUserByUserSession(Session userSession) {
 		Optional<OpenChatUser> user = users.stream().filter(u-> u.getSession().equals(userSession)).findFirst();
 		return user.orElse(null);
+	}
+	
+	// 全ユーザーにメッセージを送信
+	private void sendMessageToAll(OpenChatMessage message) throws IOException {
+		String jsonMessage = jsonMapper.writeValueAsString(message);
+		for (OpenChatUser user : users) {
+			user.getSession().getBasicRemote().sendText(jsonMessage);
+		}
 	}
 
 }
